@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { LoginDto } from './dto/login.dto';
 import { User } from '../../generated/prisma/client';
 
 @Injectable()
@@ -101,5 +102,26 @@ export class UsersService {
     await this.prismaService.prisma.user.delete({
       where: { id },
     });
+  }
+
+  async login(loginDto: LoginDto): Promise<Omit<User, 'password'>> {
+    // Find user by email without relations for login
+    const user = await this.prismaService.prisma.user.findUnique({
+      where: { email: loginDto.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Note: In production, passwords should be hashed using bcrypt
+    // For now, we're doing a simple comparison (assuming plain text storage)
+    if (user.password !== loginDto.password) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 }

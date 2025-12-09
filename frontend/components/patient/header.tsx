@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { getUser, clearUser } from "@/lib/auth"
 import type { User as UserType } from "@/lib/api"
 
-export function AdminHeader() {
+export function PatientHeader() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<UserType | null>(null)
 
@@ -55,7 +55,7 @@ export function AdminHeader() {
                   <User className="h-5 w-5 text-gray-600" />
                 </div>
                 <span className="text-sm font-medium text-gray-900">
-                  {currentUser?.fullName || "Admin"}
+                  {currentUser?.fullName || "Patient"}
                 </span>
                 <ChevronDown className="h-4 w-4 text-gray-500" />
               </Button>

@@ -1,42 +1,10 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { appointmentsAPI } from "@/lib/api"
 import { Calendar, Clock, CheckCircle, AlertCircle, TrendingUp, TrendingDown } from "lucide-react"
-import DashboardCharts from "./dashboard-charts"
-
-async function getDashboardStats() {
-  try {
-    const appointments = await appointmentsAPI.getAll().catch(() => [])
-
-    const totalAppointments = appointments.length
-    const pendingAppointments = appointments.filter(
-      (a) => a.status === "PENDING"
-    ).length
-    const confirmedAppointments = appointments.filter(
-      (a) => a.status === "CONFIRMED"
-    ).length
-    const completedAppointments = appointments.filter(
-      (a) => a.status === "COMPLETED"
-    ).length
-    // Active appointments = only CONFIRMED (not including PENDING to avoid double counting)
-    const activeAppointments = confirmedAppointments
-
-    return {
-      totalAppointments,
-      pendingAppointments,
-      confirmedAppointments,
-      completedAppointments,
-      activeAppointments,
-    }
-  } catch (error) {
-    console.error("Error fetching dashboard stats:", error)
-    return {
-      totalAppointments: 0,
-      pendingAppointments: 0,
-      confirmedAppointments: 0,
-      completedAppointments: 0,
-      activeAppointments: 0,
-    }
-  }
-}
+import PatientDashboardCharts from "./dashboard-charts"
+import { getUser } from "@/lib/auth"
 
 function CircularProgress({ percentage }: { percentage: number }) {
   const circumference = 2 * Math.PI * 12
@@ -72,8 +40,57 @@ function CircularProgress({ percentage }: { percentage: number }) {
   )
 }
 
-export default async function AdminDashboard() {
-  const stats = await getDashboardStats()
+export default function PatientDashboard() {
+  const [stats, setStats] = useState({
+    totalAppointments: 0,
+    pendingAppointments: 0,
+    confirmedAppointments: 0,
+    completedAppointments: 0,
+    activeAppointments: 0,
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        // Get current logged-in user
+        const currentUser = getUser()
+        if (!currentUser) {
+          setLoading(false)
+          return
+        }
+
+        // Get appointments for this patient
+        const appointments = await appointmentsAPI.getByPatient(currentUser.id).catch(() => [])
+
+        const totalAppointments = appointments.length
+        const pendingAppointments = appointments.filter(
+          (a) => a.status === "PENDING"
+        ).length
+        const confirmedAppointments = appointments.filter(
+          (a) => a.status === "CONFIRMED"
+        ).length
+        const completedAppointments = appointments.filter(
+          (a) => a.status === "COMPLETED"
+        ).length
+        const activeAppointments = confirmedAppointments
+
+        setStats({
+          totalAppointments,
+          pendingAppointments,
+          confirmedAppointments,
+          completedAppointments,
+          activeAppointments,
+        })
+      } catch (error) {
+        console.error("Error fetching patient dashboard stats:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
 
   // Use totalAppointments for percentage calculations
   const totalForPercentage = Math.max(stats.totalAppointments, 1)
@@ -121,6 +138,14 @@ export default async function AdminDashboard() {
     },
   ]
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
@@ -164,7 +189,7 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      <DashboardCharts stats={stats} />
+      <PatientDashboardCharts stats={stats} />
     </div>
   )
 }

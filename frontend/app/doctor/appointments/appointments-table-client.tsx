@@ -3,16 +3,15 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import DataTable, { type Column } from "@/components/comman/datatable"
-import { type Appointment, appointmentsAPI } from "@/lib/api"
+import { type Appointment } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Edit, Trash2 } from "lucide-react"
+import { Eye, Edit } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { EditAppointmentModal } from "@/components/admin/edit-appointment-modal"
-import ConfirmDeleteModal from "@/components/comman/delete-model"
+import { EditAppointmentModal } from "@/components/doctor/edit-appointment-modal"
 
-interface AppointmentsTableClientProps {
+interface DoctorAppointmentsTableClientProps {
   initialData: Appointment[]
   onRefresh?: () => void
 }
@@ -32,14 +31,13 @@ function getStatusBadgeVariant(status: string) {
   }
 }
 
-export default function AppointmentsTableClient({
+export default function DoctorAppointmentsTableClient({
   initialData,
   onRefresh,
-}: AppointmentsTableClientProps) {
+}: DoctorAppointmentsTableClientProps) {
   const router = useRouter()
   const [appointments, setAppointments] = useState<Appointment[]>(initialData)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
 
   // Update appointments when initialData changes
@@ -50,25 +48,6 @@ export default function AppointmentsTableClient({
   const handleEdit = (appointment: Appointment) => {
     setSelectedAppointment(appointment)
     setIsEditModalOpen(true)
-  }
-
-  const handleDelete = (appointment: Appointment) => {
-    setSelectedAppointment(appointment)
-    setIsDeleteModalOpen(true)
-  }
-
-  const confirmDelete = async () => {
-    if (!selectedAppointment) return
-
-    try {
-      await appointmentsAPI.delete(selectedAppointment.id)
-      handleSuccess()
-      setIsDeleteModalOpen(false)
-      setSelectedAppointment(null)
-    } catch (error: any) {
-      console.error("Error deleting appointment:", error)
-      alert(error?.message || "Failed to delete appointment. Please try again.")
-    }
   }
 
   const handleSuccess = async () => {
@@ -88,12 +67,6 @@ export default function AppointmentsTableClient({
           {appointment.patient?.fullName || "N/A"}
         </span>
       ),
-    },
-    {
-      key: "doctor",
-      label: "Doctor",
-      render: (appointment) =>
-        appointment.doctor?.user?.fullName || "N/A",
     },
     {
       key: "appointmentDate",
@@ -117,6 +90,15 @@ export default function AppointmentsTableClient({
       ),
     },
     {
+      key: "symptoms",
+      label: "Symptoms",
+      render: (appointment) => (
+        <span className="text-sm text-gray-600">
+          {appointment.symptoms || "N/A"}
+        </span>
+      ),
+    },
+    {
       key: "actions",
       label: "Actions",
       render: (appointment) => (
@@ -129,12 +111,9 @@ export default function AppointmentsTableClient({
             <Edit className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/admin/appointments/${appointment.id}`}>
+            <Link href={`/doctor/appointments/${appointment.id}`}>
               <Eye className="h-4 w-4" />
             </Link>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(appointment)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       ),
@@ -144,7 +123,7 @@ export default function AppointmentsTableClient({
   return (
     <>
       <DataTable
-        title="All Appointments"
+        title="My Appointments"
         columns={columns}
         data={appointments}
         showAddButton={false}
@@ -156,15 +135,7 @@ export default function AppointmentsTableClient({
         onSuccess={handleSuccess}
         appointment={selectedAppointment}
       />
-      <ConfirmDeleteModal
-        show={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false)
-          setSelectedAppointment(null)
-        }}
-        onConfirm={confirmDelete}
-        itemName="appointment"
-      />
     </>
   )
 }
+

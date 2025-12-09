@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Stethoscope } from "lucide-react"
 import { Label } from "@/components/ui/label"
+import { authAPI } from "@/lib/api"
+import { setUser, getUser } from "@/lib/auth"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,34 +17,66 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  // Redirect if already logged in
+  useEffect(() => {
+    const user = getUser()
+    if (user && user.role) {
+      switch (user.role.toUpperCase()) {
+        case "ADMIN":
+          router.replace("/admin")
+          break
+        case "DOCTOR":
+          router.replace("/doctor")
+          break
+        case "PATIENT":
+          router.replace("/patient")
+          break
+      }
+    }
+  }, [router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
     try {
-      // TODO: Replace with actual authentication API call
-      // For now, simple validation
       if (!email || !password) {
         setError("Please enter both email and password")
         setLoading(false)
         return
       }
 
-      // Simulate API call - replace with actual auth endpoint
-      // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password }),
-      // })
+      // Call backend login API
+      const user = await authAPI.login({ email, password })
       
-      // Temporary: Redirect to admin on any login for now
-      // In production, validate credentials first
-      setTimeout(() => {
-        router.push("/admin")
-      }, 500)
-    } catch (err) {
-      setError("Login failed. Please try again.")
+      // Validate user and role
+      if (!user || !user.role) {
+        setError("Invalid user data received from server")
+        setLoading(false)
+        return
+      }
+
+      // Store user in localStorage
+      setUser(user)
+
+      // Redirect based on user role
+      switch (user.role.toUpperCase()) {
+        case "ADMIN":
+          router.replace("/admin")
+          break
+        case "DOCTOR":
+          router.replace("/doctor")
+          break
+        case "PATIENT":
+          router.replace("/patient")
+          break
+        default:
+          setError(`Unknown user role: ${user.role}. Please contact support.`)
+          setLoading(false)
+      }
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials and try again.")
       setLoading(false)
     }
   }
@@ -58,7 +92,7 @@ export default function LoginPage() {
             </CardTitle>
           </div>
           <CardDescription className="text-base">
-            Sign in to access the admin dashboard
+            Sign in to access your dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>

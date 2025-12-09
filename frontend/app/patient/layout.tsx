@@ -1,18 +1,18 @@
-import { AdminSidebar } from "@/components/admin/sidebar"
-import { AdminHeader } from "@/components/admin/header"
+import { PatientSidebar } from "@/components/patient/sidebar"
+import { PatientHeader } from "@/components/patient/header"
 import { RouteGuard } from "@/components/auth/route-guard"
 
-export default function AdminLayout({
+export default function PatientLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <RouteGuard allowedRoles={["ADMIN"]}>
+    <RouteGuard allowedRoles={["PATIENT"]}>
       <div className="flex h-screen overflow-hidden bg-gray-50">
-        <AdminSidebar />
+        <PatientSidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <AdminHeader />
+          <PatientHeader />
           <main className="flex-1 overflow-y-auto bg-gray-50">
             <div className="p-6">
               {children}
@@ -23,3 +23,4 @@ export default function AdminLayout({
     </RouteGuard>
   )
 }
+

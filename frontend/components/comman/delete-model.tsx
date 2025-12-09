@@ -1,7 +1,14 @@
 "use client";
 import { Trash2 } from "lucide-react";
 
-const ConfirmDeleteModal = ({ show, onClose, onConfirm }) => {
+export interface ConfirmDeleteModalProps {
+  show: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  itemName?: string;
+}
+
+const ConfirmDeleteModal = ({ show, onClose, onConfirm, itemName }: ConfirmDeleteModalProps) => {
   if (!show) return null;
 
   return (
@@ -47,7 +54,7 @@ const ConfirmDeleteModal = ({ show, onClose, onConfirm }) => {
           Confirm Deletion
         </h2>
         <p className="text-center text-gray-600 mb-6">
-          Are you sure you want to delete ?
+          Are you sure you want to delete {itemName ? `this ${itemName}` : "this item"}? This action cannot be undone.
         </p>
 
         <div className="flex justify-center gap-4">
@@ -70,3 +77,4 @@ const ConfirmDeleteModal = ({ show, onClose, onConfirm }) => {
 };
 
 export default ConfirmDeleteModal;
+

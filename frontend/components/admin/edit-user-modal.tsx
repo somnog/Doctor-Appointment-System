@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -19,15 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { usersAPI, type UserRole } from "@/lib/api"
+import { usersAPI, type UserRole, type User } from "@/lib/api"
 
-interface AddUserModalProps {
+interface EditUserModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  user: User | null
 }
 
-export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProps) {
+export function EditUserModal({ open, onOpenChange, onSuccess, user }: EditUserModalProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
@@ -39,42 +39,65 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
     role: "PATIENT" as UserRole,
   })
 
+  useEffect(() => {
+    if (open && user) {
+      setFormData({
+        email: user.email || "",
+        password: "", // Don't pre-fill password
+        fullName: user.fullName || "",
+        phoneNumber: user.phoneNumber || "",
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.split('T')[0] : "",
+        address: user.address || "",
+        role: user.role || "PATIENT",
+      })
+    }
+  }, [open, user])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) return
+
     setLoading(true)
 
     try {
-      await usersAPI.create({
-        ...formData,
-        dateOfBirth: formData.dateOfBirth || undefined,
-        address: formData.address || undefined,
-      })
+      const updateData: any = {
+        email: formData.email,
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        role: formData.role,
+      }
+
+      if (formData.password) {
+        updateData.password = formData.password
+      }
+
+      if (formData.dateOfBirth) {
+        updateData.dateOfBirth = formData.dateOfBirth
+      }
+
+      if (formData.address) {
+        updateData.address = formData.address
+      }
+
+      await usersAPI.update(user.id, updateData)
       onSuccess()
       onOpenChange(false)
-      // Reset form
-      setFormData({
-        email: "",
-        password: "",
-        fullName: "",
-        phoneNumber: "",
-        dateOfBirth: "",
-        address: "",
-        role: "PATIENT",
-      })
     } catch (error: any) {
-      console.error("Error creating user:", error)
-      const errorMessage = error?.message || "Failed to create user. Please try again."
+      console.error("Error updating user:", error)
+      const errorMessage = error?.message || "Failed to update user. Please try again."
       alert(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
+  if (!user) return null
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-3">
-          <DialogTitle>Add New User</DialogTitle>
+          <DialogTitle>Edit User</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-3 py-2">
@@ -104,7 +127,7 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="password" className="text-xs">Password *</Label>
+              <Label htmlFor="password" className="text-xs">Password (leave blank to keep current)</Label>
               <Input
                 id="password"
                 type="password"
@@ -113,7 +136,6 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                required
               />
             </div>
             <div className="grid gap-1.5">
@@ -181,7 +203,7 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={loading}>
-              {loading ? "Creating..." : "Create"}
+              {loading ? "Updating..." : "Update"}
             </Button>
           </DialogFooter>
         </form>

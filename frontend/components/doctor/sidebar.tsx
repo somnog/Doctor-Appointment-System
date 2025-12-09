@@ -4,9 +4,8 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { 
   LayoutDashboard, 
-  Users, 
   Calendar, 
-  Stethoscope, 
+  User,
   LogOut,
   ChevronRight
 } from "lucide-react"
@@ -14,13 +13,12 @@ import { cn } from "@/lib/utils"
 import { clearUser } from "@/lib/auth"
 
 const navigation = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Users", href: "/admin/users", icon: Users },
-  { name: "Appointments", href: "/admin/appointments", icon: Calendar },
-  { name: "Doctors", href: "/admin/doctors", icon: Stethoscope },
+  { name: "Dashboard", href: "/doctor", icon: LayoutDashboard },
+  { name: "Appointments", href: "/doctor/appointments", icon: Calendar },
+  { name: "Profile", href: "/doctor/profile", icon: User },
 ]
 
-export function AdminSidebar() {
+export function DoctorSidebar() {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -32,7 +30,7 @@ export function AdminSidebar() {
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-gray-50">
       <div className="flex h-14 items-center border-b bg-white px-4">
-        <h1 className="text-base font-semibold text-gray-900">Admin Panel</h1>
+        <h1 className="text-base font-semibold text-gray-900">Doctor Panel</h1>
       </div>
       <nav className="flex-1 space-y-1 p-3">
         {navigation.map((item) => {
@@ -69,3 +67,4 @@ export function AdminSidebar() {
     </div>
   )
 }
+

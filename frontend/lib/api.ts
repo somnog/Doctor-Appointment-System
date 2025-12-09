@@ -94,6 +94,19 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   }
 }
 
+// Auth API
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export const authAPI = {
+  login: (credentials: LoginCredentials) => fetchAPI<User>('/users/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials),
+  }),
+};
+
 // Users API
 export const usersAPI = {
   getAll: () => fetchAPI<User[]>('/users'),
