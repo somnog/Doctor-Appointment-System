@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react"
 import { usersAPI, type User } from "@/lib/api"
-import PatientProfileClient from "./profile-client"
+import AdminProfileClient from "./profile-client"
 import { getUser } from "@/lib/auth"
 
-export default function PatientProfilePage() {
+export default function AdminProfilePage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchPatientProfile() {
+    async function fetchAdminProfile() {
       try {
         const currentUser = getUser()
-        if (!currentUser || currentUser.role !== "PATIENT") {
+        if (!currentUser || currentUser.role !== "ADMIN") {
           setLoading(false)
           return
         }
@@ -22,13 +22,13 @@ export default function PatientProfilePage() {
         const userData = await usersAPI.getById(currentUser.id).catch(() => currentUser)
         setUser(userData || currentUser)
       } catch (error) {
-        console.error("Error fetching patient profile:", error)
+        console.error("Error fetching admin profile:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchPatientProfile()
+    fetchAdminProfile()
   }, [])
 
   if (loading) {
@@ -42,11 +42,11 @@ export default function PatientProfilePage() {
   if (!user) {
     return (
       <div className="bg-white rounded-lg p-6 shadow-sm">
-        <p className="text-gray-600">No profile found. Please ensure you are logged in as a patient.</p>
+        <p className="text-gray-600">No profile found. Please ensure you are logged in as an admin.</p>
       </div>
     )
   }
 
-  return <PatientProfileClient user={user} />
+  return <AdminProfileClient user={user} />
 }
 

@@ -1,21 +1,51 @@
-import { timeSlotsAPI } from "@/lib/api"
+"use client"
+
+import { useEffect, useState, useCallback } from "react"
+import { timeSlotsAPI, doctorProfilesAPI, type TimeSlot } from "@/lib/api"
 import DoctorTimeSlotsTableClient from "./time-slots-table-client"
+import { getUser } from "@/lib/auth"
 
-async function getDoctorTimeSlots() {
-  try {
-    const timeSlots = await timeSlotsAPI.getAll()
-    // TODO: Filter by current doctor ID from auth
-    // For now, return all time slots
-    return timeSlots
-  } catch (error) {
-    console.error("Error fetching doctor time slots:", error)
-    return []
+export default function DoctorTimeSlotsPage() {
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchTimeSlots = useCallback(async () => {
+    setLoading(true)
+    try {
+      const currentUser = getUser()
+      if (!currentUser || currentUser.role !== "DOCTOR") {
+        setTimeSlots([])
+        return
+      }
+
+      const doctorProfile = await doctorProfilesAPI.getByUserId(currentUser.id).catch(() => null)
+      if (!doctorProfile) {
+        setTimeSlots([])
+        return
+      }
+
+      const fetchedTimeSlots = await timeSlotsAPI.getByDoctor(doctorProfile.id)
+      setTimeSlots(fetchedTimeSlots)
+    } catch (error) {
+      console.error("Error fetching doctor time slots:", error)
+      setTimeSlots([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchTimeSlots()
+  }, [fetchTimeSlots])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading time slots...</p>
+      </div>
+    )
   }
-}
 
-export default async function DoctorTimeSlotsPage() {
-  const timeSlots = await getDoctorTimeSlots()
-
-  return <DoctorTimeSlotsTableClient initialData={timeSlots} />
+  return <DoctorTimeSlotsTableClient initialData={timeSlots} onRefresh={fetchTimeSlots} />
 }
 

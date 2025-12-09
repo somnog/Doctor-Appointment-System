@@ -36,7 +36,7 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
     phoneNumber: "",
     dateOfBirth: "",
     address: "",
-    role: "PATIENT" as UserRole,
+    role: "" as UserRole, // Must select admin or doctor
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,6 +44,12 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
     setLoading(true)
 
     try {
+      if (!formData.role) {
+        alert("Please select a role")
+        setLoading(false)
+        return
+      }
+
       await usersAPI.create({
         ...formData,
         dateOfBirth: formData.dateOfBirth || undefined,
@@ -59,7 +65,7 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
         phoneNumber: "",
         dateOfBirth: "",
         address: "",
-        role: "PATIENT",
+        role: "" as UserRole, // Reset to empty
       })
     } catch (error: any) {
       console.error("Error creating user:", error)
@@ -75,6 +81,9 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-3">
           <DialogTitle>Add New User</DialogTitle>
+          <DialogDescription className="text-xs text-gray-500">
+            Create a new admin or doctor account. Patients must sign up themselves.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-3 py-2">
@@ -143,9 +152,11 @@ export function AddUserModal({ open, onOpenChange, onSuccess }: AddUserModalProp
                 <SelectContent>
                   <SelectItem value="ADMIN">admin</SelectItem>
                   <SelectItem value="DOCTOR">doctor</SelectItem>
-                  <SelectItem value="PATIENT">patient</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Patients must sign up themselves.
+              </p>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="dateOfBirth" className="text-xs">Date of Birth</Label>

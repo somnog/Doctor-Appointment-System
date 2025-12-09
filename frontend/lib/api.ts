@@ -82,7 +82,26 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
       throw new Error(errorMessage);
     }
 
-    return response.json();
+    // Handle 204 No Content (empty response) - common for DELETE requests
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    // Get response text to check if it's empty
+    const text = await response.text();
+    
+    // If response is empty, return undefined
+    if (!text || text.trim() === '') {
+      return undefined as T;
+    }
+
+    // Try to parse as JSON
+    try {
+      return JSON.parse(text);
+    } catch {
+      // If not JSON, return as text
+      return text as T;
+    }
   } catch (error: any) {
     // More specific error handling
     if (error instanceof TypeError) {
@@ -100,10 +119,23 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface SignupData {
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber: string;
+  dateOfBirth?: string;
+  address?: string;
+}
+
 export const authAPI = {
   login: (credentials: LoginCredentials) => fetchAPI<User>('/users/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
+  }),
+  signup: (data: SignupData) => fetchAPI<User>('/users/signup', {
+    method: 'POST',
+    body: JSON.stringify(data),
   }),
 };
 
@@ -151,7 +183,7 @@ export const appointmentsAPI = {
 export const doctorProfilesAPI = {
   getAll: () => fetchAPI<DoctorProfile[]>('/doctor-profiles'),
   getById: (id: string) => fetchAPI<DoctorProfile>(`/doctor-profiles/${id}`),
-  getByUserId: (userId: string) => fetchAPI<DoctorProfile>(`/doctor-profiles/user/${userId}`),
+  getByUserId: (userId: string) => fetchAPI<DoctorProfile | null>(`/doctor-profiles/user/${userId}`).catch(() => null),
   create: (data: Partial<DoctorProfile>) => fetchAPI<DoctorProfile>('/doctor-profiles', {
     method: 'POST',
     body: JSON.stringify(data),

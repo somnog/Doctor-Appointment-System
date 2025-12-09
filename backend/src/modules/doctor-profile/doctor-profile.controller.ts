@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { DoctorProfileService } from './doctor-profile.service';
 import { CreateDoctorProfileDto } from './dto/create-doctor-profile.dto';
@@ -30,7 +31,12 @@ export class DoctorProfileController {
 
   @Get('user/:userId')
   findByUserId(@Param('userId') userId: string) {
-    return this.doctorProfileService.findByUserId(userId);
+    return this.doctorProfileService.findByUserId(userId).then(profile => {
+      if (!profile) {
+        throw new NotFoundException(`Doctor profile not found for user ID ${userId}`);
+      }
+      return profile;
+    });
   }
 
   @Get(':id')

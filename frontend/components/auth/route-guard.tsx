@@ -25,7 +25,7 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
       // If no user, redirect to login immediately
       if (!user || !userRole) {
         setShouldRedirect(true)
-        router.replace("/")
+        router.replace("/login")
         return
       }
 
@@ -33,7 +33,7 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
       const validRoles: UserRole[] = ["ADMIN", "DOCTOR", "PATIENT"]
       if (!validRoles.includes(userRole as UserRole)) {
         setShouldRedirect(true)
-        router.replace("/")
+        router.replace("/login")
         return
       }
 
@@ -52,7 +52,7 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
             router.replace("/patient")
             break
           default:
-            router.replace("/")
+            router.replace("/login")
         }
         return
       }

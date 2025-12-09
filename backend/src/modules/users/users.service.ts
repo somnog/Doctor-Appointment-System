@@ -3,13 +3,26 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { SignupDto } from './dto/signup.dto';
 import { User } from '../../generated/prisma/client';
+import { UserRole } from '../../generated/prisma/enums';
 
 @Injectable()
 export class UsersService {
   constructor(private prismaService: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+    // Prevent creating PATIENT role through admin endpoint
+    // Patients must use the signup endpoint
+    if (createUserDto.role === UserRole.PATIENT) {
+      throw new ConflictException('Patients cannot be created through this endpoint. Please use the signup endpoint.');
+    }
+
+    // Only allow ADMIN and DOCTOR roles to be created through this endpoint
+    if (createUserDto.role !== UserRole.ADMIN && createUserDto.role !== UserRole.DOCTOR) {
+      throw new ConflictException('Only admin and doctor roles can be created through this endpoint.');
+    }
+
     // Check if user with email already exists
     const existingUser = await this.prismaService.prisma.user.findUnique({
       where: { email: createUserDto.email },
@@ -122,6 +135,33 @@ export class UsersService {
 
     // Remove password from response
     const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async signup(signupDto: SignupDto): Promise<Omit<User, 'password'>> {
+    // Check if user with email already exists
+    const existingUser = await this.prismaService.prisma.user.findUnique({
+      where: { email: signupDto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    const userData = {
+      ...signupDto,
+      role: UserRole.PATIENT, // Force PATIENT role for signup
+      dateOfBirth: signupDto.dateOfBirth
+        ? new Date(signupDto.dateOfBirth)
+        : undefined,
+    };
+
+    const newUser = await this.prismaService.prisma.user.create({
+      data: userData,
+    });
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = newUser;
     return userWithoutPassword;
   }
 }

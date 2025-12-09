@@ -6,6 +6,7 @@ import {
   LayoutDashboard, 
   Calendar, 
   User,
+  Clock,
   LogOut,
   ChevronRight
 } from "lucide-react"
@@ -15,6 +16,7 @@ import { clearUser } from "@/lib/auth"
 const navigation = [
   { name: "Dashboard", href: "/doctor", icon: LayoutDashboard },
   { name: "Appointments", href: "/doctor/appointments", icon: Calendar },
+  { name: "Time Slots", href: "/doctor/time-slots", icon: Clock },
   { name: "Profile", href: "/doctor/profile", icon: User },
 ]
 
